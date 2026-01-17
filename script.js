@@ -415,63 +415,25 @@ const preguntasSentencias = [
   }
 ];
 
-
-// --- FRASES DE ÁNIMO ---
-const frases_animo = [
-  "¡Muy bien!",
-  "¡Correcto!",
-  "¡Buen trabajo!",
-  "¡Así se hace!",
-  "¡Perfecto!"
-];
-
-// =======================
-// VARIABLES
-// =======================
-
-let modo = "";
-let preguntasParaEsteTest = [];
-let i = 0;
-let puntuacion = 0;
-
-// =======================
-// FUNCIONES
-// =======================
-
-function barajar(array) {
-  let currentIndex = array.length, randomIndex;
-  while (currentIndex !== 0) {
-    randomIndex = Math.floor(Math.random() * currentIndex);
-    currentIndex--;
-    [array[currentIndex], array[randomIndex]] =
-      [array[randomIndex], array[currentIndex]];
-  }
-  return array; // (opcional) por si quieres usar el retorno
-}
-
-function mostrarMensaje(texto, tipo) {
-  const chat = document.getElementById("chat");
-  const msg = document.createElement("div");
-  msg.classList.add("message", tipo);
-  msg.innerHTML = String(texto).replace(/\n/g, "<br>");
-  chat.appendChild(msg);
-  chat.scrollTop = chat.scrollHeight;
-}
-
 function mostrarMenuInicial() {
+  // Limpia el chat al iniciar (opcional, pero recomendable)
+  const chat = document.getElementById("chat");
+  if (chat) chat.innerHTML = "";
+
   mostrarMensaje(
-    "👋 Hola, bienvenido a las preguntas que nos han pasado de años anteriores.\n\nElige un modo para empezar:\n- START",
+    "👋 Hola, bienvenido a las preguntas que nos han pasado de años anteriores.\n\nPulsa START para comenzar (todas las preguntas en orden aleatorio).",
     "bot"
   );
 
-  // Botones del menú
+  // Rehabilitar botones
+  document.querySelectorAll("button").forEach(b => {
+    b.disabled = false;
+    b.style.display = "inline-block";
+  });
+
+  // Mostrar solo START
   configurarBoton("btnA", "START", iniciarSentencias);
-
-  // Ocultamos los que no se usan en el menú
-  ocultarBotones(["btnC", "btnD", "btnB"]);
-
-  // Rehabilitamos botones por si venías de un test acabado
-  document.querySelectorAll("button").forEach(b => (b.disabled = false));
+  ocultarBotones(["btnB", "btnC", "btnD"]);
 }
 
 function iniciarSentencias() {
@@ -479,15 +441,16 @@ function iniciarSentencias() {
   i = 0;
   puntuacion = 0;
 
-  // Seguridad: si no existe el array, avisamos y volvemos al menú
   if (typeof preguntasSentencias === "undefined" || !Array.isArray(preguntasSentencias)) {
     mostrarMensaje("❌ No se encontró 'preguntasSentencias'. Revisa que esté definido antes de este script.", "bot");
     return;
   }
 
-  barajar(preguntasSentencias);
-  preguntasParaEsteTest = preguntasSentencias.slice(0, 30);
+  // Barajar TODAS las preguntas (sin slice)
+  preguntasParaEsteTest = [...preguntasSentencias]; // copia para no modificar el original
+  barajar(preguntasParaEsteTest);
 
+  // Cambiar botones a V/F
   configurarBoton("btnA", "V", () => responder("v"));
   configurarBoton("btnB", "F", () => responder("f"));
   ocultarBotones(["btnC", "btnD"]);
@@ -495,80 +458,17 @@ function iniciarSentencias() {
   mostrarPregunta();
 }
 
-function mostrarPregunta() {
-  if (!preguntasParaEsteTest[i]) return;
-
-  const p = preguntasParaEsteTest[i];
-  const texto = `${p.texto}\n\n${p.opciones.join("\n")}`;
-  mostrarMensaje(texto, "bot");
-}
-
-function responder(opcion) {
-  const p = preguntasParaEsteTest[i];
-  mostrarMensaje(opcion.toUpperCase(), "user");
-
-  if (opcion === p.correcta) {
-    puntuacion++;
-    mostrarMensaje(
-      frases_animo[Math.floor(Math.random() * frases_animo.length)],
-      "bot"
-    );
-  } else {
-    mostrarMensaje(
-      `❌ Incorrecte. La correcta era ${p.correcta.toUpperCase()}`,
-      "bot"
-    );
-  }
-
-  i++;
-
-  if (i < preguntasParaEsteTest.length) {
-    setTimeout(mostrarPregunta, 600);
-  } else {
-    setTimeout(() => {
-      mostrarMensaje(
-        `🏁 Resultat final: ${puntuacion} / ${preguntasParaEsteTest.length}`,
-        "bot"
-      );
-
-      // Desactivamos botones para evitar clicks raros
-      desactivarBotones();
-
-      // Volver al menú tras 1.2s (puedes quitarlo si no quieres)
-      setTimeout(mostrarMenuInicial, 1200);
-    }, 600);
-  }
-}
-
 function configurarBoton(id, texto, accion) {
   const btn = document.getElementById(id);
-  if (!btn) return; // evita crash si falta el botón
-  btn.style.display = "block";
+  if (!btn) {
+    mostrarMensaje(`❌ No existe el botón con id="${id}". Revisa tu HTML.`, "bot");
+    return;
+  }
+  btn.style.display = "inline-block";
   btn.disabled = false;
   btn.textContent = texto;
   btn.onclick = accion;
 }
-
-function ocultarBotones(ids) {
-  ids.forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.style.display = "none";
-  });
-}
-
-function desactivarBotones() {
-  document.querySelectorAll("button").forEach(b => (b.disabled = true));
-}
-
-// =======================
-// ARRANQUE
-// =======================
-
-document.addEventListener("DOMContentLoaded", mostrarMenuInicial);
-
-
-
-
 
 
 
