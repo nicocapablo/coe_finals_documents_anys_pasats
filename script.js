@@ -415,60 +415,171 @@ const preguntasSentencias = [
   }
 ];
 
-function mostrarMenuInicial() {
-  // Limpia el chat al iniciar (opcional, pero recomendable)
+// =======================
+// FRASES DE ÁNIMO
+// =======================
+
+const frases_animo = [
+  "¡Muy bien!",
+  "¡Correcto!",
+  "¡Buen trabajo!",
+  "¡Así se hace!",
+  "¡Perfecto!"
+];
+
+// =======================
+// VARIABLES
+// =======================
+
+let preguntasParaEsteTest = [];
+let i = 0;
+let puntuacion = 0;
+
+// =======================
+// UTILIDADES
+// =======================
+
+function barajar(array) {
+  let currentIndex = array.length, randomIndex;
+  while (currentIndex !== 0) {
+    randomIndex = Math.floor(Math.random() * currentIndex);
+    currentIndex--;
+    [array[currentIndex], array[randomIndex]] =
+      [array[randomIndex], array[currentIndex]];
+  }
+}
+
+function mostrarMensaje(texto, tipo) {
   const chat = document.getElementById("chat");
-  if (chat) chat.innerHTML = "";
+  const msg = document.createElement("div");
+  msg.classList.add("message", tipo);
+  msg.innerHTML = texto.replace(/\n/g, "<br>");
+  chat.appendChild(msg);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function resetBotones() {
+  ["btnA", "btnB", "btnC", "btnD"].forEach(id => {
+    const b = document.getElementById(id);
+    if (!b) return;
+    b.style.display = "none";
+    b.disabled = false;
+    b.textContent = "";
+    b.onclick = null;
+  });
+}
+
+// =======================
+// MENÚ INICIAL
+// =======================
+
+function mostrarMenuInicial() {
+  const chat = document.getElementById("chat");
+  chat.innerHTML = "";
 
   mostrarMensaje(
-    "👋 Hola, bienvenido a las preguntas que nos han pasado de años anteriores.\n\nPulsa START para comenzar (todas las preguntas en orden aleatorio).",
+    "👋 Hola, bienvenido a las preguntas que nos han pasado de años anteriores.\n\nPulsa START para comenzar. Todas las preguntas saldrán desordenadas.",
     "bot"
   );
 
-  // Rehabilitar botones
-  document.querySelectorAll("button").forEach(b => {
-    b.disabled = false;
-    b.style.display = "inline-block";
-  });
+  resetBotones();
 
-  // Mostrar solo START
-  configurarBoton("btnA", "START", iniciarSentencias);
-  ocultarBotones(["btnB", "btnC", "btnD"]);
+  const btnA = document.getElementById("btnA");
+  btnA.style.display = "inline-block";
+  btnA.textContent = "START";
+  btnA.onclick = iniciarTest;
 }
 
-function iniciarSentencias() {
-  modo = "sentencias";
-  i = 0;
-  puntuacion = 0;
+// =======================
+// INICIO TEST
+// =======================
 
-  if (typeof preguntasSentencias === "undefined" || !Array.isArray(preguntasSentencias)) {
-    mostrarMensaje("❌ No se encontró 'preguntasSentencias'. Revisa que esté definido antes de este script.", "bot");
+function iniciarTest() {
+  if (typeof preguntasSentencias === "undefined") {
+    mostrarMensaje("❌ No existe el array preguntasSentencias.", "bot");
     return;
   }
 
-  // Barajar TODAS las preguntas (sin slice)
-  preguntasParaEsteTest = [...preguntasSentencias]; // copia para no modificar el original
+  i = 0;
+  puntuacion = 0;
+
+  preguntasParaEsteTest = [...preguntasSentencias];
   barajar(preguntasParaEsteTest);
 
-  // Cambiar botones a V/F
-  configurarBoton("btnA", "V", () => responder("v"));
-  configurarBoton("btnB", "F", () => responder("f"));
-  ocultarBotones(["btnC", "btnD"]);
+  resetBotones();
+
+  const btnA = document.getElementById("btnA");
+  const btnB = document.getElementById("btnB");
+
+  btnA.style.display = "inline-block";
+  btnB.style.display = "inline-block";
+
+  btnA.textContent = "V";
+  btnB.textContent = "F";
+
+  btnA.onclick = () => responder("v");
+  btnB.onclick = () => responder("f");
 
   mostrarPregunta();
 }
 
-function configurarBoton(id, texto, accion) {
-  const btn = document.getElementById(id);
-  if (!btn) {
-    mostrarMensaje(`❌ No existe el botón con id="${id}". Revisa tu HTML.`, "bot");
-    return;
-  }
-  btn.style.display = "inline-block";
-  btn.disabled = false;
-  btn.textContent = texto;
-  btn.onclick = accion;
+// =======================
+// MOSTRAR PREGUNTA
+// =======================
+
+function mostrarPregunta() {
+  if (!preguntasParaEsteTest[i]) return;
+
+  const p = preguntasParaEsteTest[i];
+  mostrarMensaje(
+    `${p.texto}\n\n${p.opciones.join("\n")}`,
+    "bot"
+  );
 }
+
+// =======================
+// RESPUESTA
+// =======================
+
+function responder(opcion) {
+  const p = preguntasParaEsteTest[i];
+  mostrarMensaje(opcion.toUpperCase(), "user");
+
+  if (opcion === p.correcta) {
+    puntuacion++;
+    mostrarMensaje(
+      frases_animo[Math.floor(Math.random() * frases_animo.length)],
+      "bot"
+    );
+  } else {
+    mostrarMensaje(
+      `❌ Incorrecto. La correcta era ${p.correcta.toUpperCase()}`,
+      "bot"
+    );
+  }
+
+  i++;
+
+  if (i < preguntasParaEsteTest.length) {
+    setTimeout(mostrarPregunta, 600);
+  } else {
+    setTimeout(() => {
+      mostrarMensaje(
+        `🏁 Resultado final: ${puntuacion} / ${preguntasParaEsteTest.length}`,
+        "bot"
+      );
+      setTimeout(mostrarMenuInicial, 1500);
+    }, 600);
+  }
+}
+
+// =======================
+// ARRANQUE
+// =======================
+
+document.addEventListener("DOMContentLoaded", mostrarMenuInicial);
+
+
 
 
 
