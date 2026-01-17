@@ -416,7 +416,6 @@ const preguntasSentencias = [
 ];
 
 
-
 // --- FRASES DE ÁNIMO ---
 const frases_animo = [
   "¡Muy bien!",
@@ -447,32 +446,45 @@ function barajar(array) {
     [array[currentIndex], array[randomIndex]] =
       [array[randomIndex], array[currentIndex]];
   }
+  return array; // (opcional) por si quieres usar el retorno
 }
 
 function mostrarMensaje(texto, tipo) {
   const chat = document.getElementById("chat");
   const msg = document.createElement("div");
   msg.classList.add("message", tipo);
-  msg.innerHTML = texto.replace(/\n/g, "<br>");
+  msg.innerHTML = String(texto).replace(/\n/g, "<br>");
   chat.appendChild(msg);
   chat.scrollTop = chat.scrollHeight;
 }
 
 function mostrarMenuInicial() {
   mostrarMensaje(
-    "👋 Hola, bienvenido a las preguntas que nos han pasado de años anteriores.\n\n¿,
+    "👋 Hola, bienvenido a las preguntas que nos han pasado de años anteriores.\n\nElige un modo para empezar:\n- START: Verdadero/Falso\n- MINITEST: Preguntas tipo test",
     "bot"
   );
 
-
+  // Botones del menú
   configurarBoton("btnA", "START", iniciarSentencias);
-  ocultarBotones(["btnC", "btnD", "btnA"]);
+  configurarBoton("btnB", "MINITEST", iniciarMinitest);
+
+  // Ocultamos los que no se usan en el menú
+  ocultarBotones(["btnC", "btnD"]);
+
+  // Rehabilitamos botones por si venías de un test acabado
+  document.querySelectorAll("button").forEach(b => (b.disabled = false));
 }
 
 function iniciarSentencias() {
   modo = "sentencias";
   i = 0;
   puntuacion = 0;
+
+  // Seguridad: si no existe el array, avisamos y volvemos al menú
+  if (typeof preguntasSentencias === "undefined" || !Array.isArray(preguntasSentencias)) {
+    mostrarMensaje("❌ No se encontró 'preguntasSentencias'. Revisa que esté definido antes de este script.", "bot");
+    return;
+  }
 
   barajar(preguntasSentencias);
   preguntasParaEsteTest = preguntasSentencias.slice(0, 30);
@@ -488,6 +500,12 @@ function iniciarMinitest() {
   modo = "minitest";
   i = 0;
   puntuacion = 0;
+
+  // Seguridad: si no existe el array, avisamos y volvemos al menú
+  if (typeof preguntasMinitest === "undefined" || !Array.isArray(preguntasMinitest)) {
+    mostrarMensaje("❌ No se encontró 'preguntasMinitest'. Revisa que esté definido antes de este script.", "bot");
+    return;
+  }
 
   barajar(preguntasMinitest);
   preguntasParaEsteTest = preguntasMinitest.slice(0, 30);
@@ -535,26 +553,34 @@ function responder(opcion) {
         `🏁 Resultat final: ${puntuacion} / ${preguntasParaEsteTest.length}`,
         "bot"
       );
+
+      // Desactivamos botones para evitar clicks raros
       desactivarBotones();
+
+      // Volver al menú tras 1.2s (puedes quitarlo si no quieres)
+      setTimeout(mostrarMenuInicial, 1200);
     }, 600);
   }
 }
 
 function configurarBoton(id, texto, accion) {
   const btn = document.getElementById(id);
+  if (!btn) return; // evita crash si falta el botón
   btn.style.display = "block";
+  btn.disabled = false;
   btn.textContent = texto;
   btn.onclick = accion;
 }
 
 function ocultarBotones(ids) {
   ids.forEach(id => {
-    document.getElementById(id).style.display = "none";
+    const el = document.getElementById(id);
+    if (el) el.style.display = "none";
   });
 }
 
 function desactivarBotones() {
-  document.querySelectorAll("button").forEach(b => b.disabled = true);
+  document.querySelectorAll("button").forEach(b => (b.disabled = true));
 }
 
 // =======================
@@ -562,6 +588,7 @@ function desactivarBotones() {
 // =======================
 
 document.addEventListener("DOMContentLoaded", mostrarMenuInicial);
+
 
 
 
