@@ -460,16 +460,15 @@ function mostrarMensaje(texto, tipo) {
 
 function mostrarMenuInicial() {
   mostrarMensaje(
-    "👋 Hola, bienvenido a las preguntas que nos han pasado de años anteriores.\n\nElige un modo para empezar:\n- START: Verdadero/Falso\n- MINITEST: Preguntas tipo test",
+    "👋 Hola, bienvenido a las preguntas que nos han pasado de años anteriores.\n\nElige un modo para empezar:\n- START",
     "bot"
   );
 
   // Botones del menú
   configurarBoton("btnA", "START", iniciarSentencias);
-  configurarBoton("btnB", "MINITEST", iniciarMinitest);
 
   // Ocultamos los que no se usan en el menú
-  ocultarBotones(["btnC", "btnD"]);
+  ocultarBotones(["btnC", "btnD", "btnB"]);
 
   // Rehabilitamos botones por si venías de un test acabado
   document.querySelectorAll("button").forEach(b => (b.disabled = false));
@@ -492,28 +491,6 @@ function iniciarSentencias() {
   configurarBoton("btnA", "V", () => responder("v"));
   configurarBoton("btnB", "F", () => responder("f"));
   ocultarBotones(["btnC", "btnD"]);
-
-  mostrarPregunta();
-}
-
-function iniciarMinitest() {
-  modo = "minitest";
-  i = 0;
-  puntuacion = 0;
-
-  // Seguridad: si no existe el array, avisamos y volvemos al menú
-  if (typeof preguntasMinitest === "undefined" || !Array.isArray(preguntasMinitest)) {
-    mostrarMensaje("❌ No se encontró 'preguntasMinitest'. Revisa que esté definido antes de este script.", "bot");
-    return;
-  }
-
-  barajar(preguntasMinitest);
-  preguntasParaEsteTest = preguntasMinitest.slice(0, 30);
-
-  configurarBoton("btnA", "A", () => responder("a"));
-  configurarBoton("btnB", "B", () => responder("b"));
-  configurarBoton("btnC", "C", () => responder("c"));
-  ocultarBotones(["btnD"]);
 
   mostrarPregunta();
 }
@@ -588,6 +565,7 @@ function desactivarBotones() {
 // =======================
 
 document.addEventListener("DOMContentLoaded", mostrarMenuInicial);
+
 
 
 
