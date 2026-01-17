@@ -415,10 +415,10 @@ const preguntasSentencias = [
   }
 ];
 
+
 // =======================
 // FRASES DE ÁNIMO
 // =======================
-
 const frases_animo = [
   "¡Muy bien!",
   "¡Correcto!",
@@ -430,7 +430,6 @@ const frases_animo = [
 // =======================
 // VARIABLES
 // =======================
-
 let preguntasParaEsteTest = [];
 let i = 0;
 let puntuacion = 0;
@@ -438,14 +437,12 @@ let puntuacion = 0;
 // =======================
 // UTILIDADES
 // =======================
-
 function barajar(array) {
   let currentIndex = array.length, randomIndex;
   while (currentIndex !== 0) {
     randomIndex = Math.floor(Math.random() * currentIndex);
     currentIndex--;
-    [array[currentIndex], array[randomIndex]] =
-      [array[randomIndex], array[currentIndex]];
+    [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
   }
 }
 
@@ -453,50 +450,59 @@ function mostrarMensaje(texto, tipo) {
   const chat = document.getElementById("chat");
   const msg = document.createElement("div");
   msg.classList.add("message", tipo);
-  msg.innerHTML = texto.replace(/\n/g, "<br>");
+  msg.innerHTML = String(texto).replace(/\n/g, "<br>");
   chat.appendChild(msg);
   chat.scrollTop = chat.scrollHeight;
 }
 
-function resetBotones() {
-  ["btnA", "btnB", "btnC", "btnD"].forEach(id => {
-    const b = document.getElementById(id);
-    if (!b) return;
-    b.style.display = "none";
-    b.disabled = false;
-    b.textContent = "";
-    b.onclick = null;
-  });
+function limpiarChat() {
+  const chat = document.getElementById("chat");
+  if (chat) chat.innerHTML = "";
+}
+
+function getBotones() {
+  const btnV = document.getElementById("btnV");
+  const btnF = document.getElementById("btnF");
+
+  if (!btnV || !btnF) {
+    throw new Error("Faltan botones: revisa que existan #btnV y #btnF en el HTML.");
+  }
+  return { btnV, btnF };
+}
+
+function setBoton(btn, texto, onClick, mostrar = true) {
+  btn.style.display = mostrar ? "inline-block" : "none";
+  btn.disabled = false;
+  btn.textContent = texto;
+  btn.onclick = onClick;
 }
 
 // =======================
 // MENÚ INICIAL
 // =======================
-
 function mostrarMenuInicial() {
-  const chat = document.getElementById("chat");
-  chat.innerHTML = "";
+  limpiarChat();
 
   mostrarMensaje(
     "👋 Hola, bienvenido a las preguntas que nos han pasado de años anteriores.\n\nPulsa START para comenzar. Todas las preguntas saldrán desordenadas.",
     "bot"
   );
 
-  resetBotones();
+  const { btnV, btnF } = getBotones();
 
-  const btnA = document.getElementById("btnA");
-  btnA.style.display = "inline-block";
-  btnA.textContent = "START";
-  btnA.onclick = iniciarTest;
+  // btnV hace de START
+  setBoton(btnV, "START", iniciarTest, true);
+
+  // ocultamos el otro botón en el menú
+  setBoton(btnF, "F", null, false);
 }
 
 // =======================
-// INICIO TEST
+// INICIO DEL TEST (todas desordenadas)
 // =======================
-
 function iniciarTest() {
-  if (typeof preguntasSentencias === "undefined") {
-    mostrarMensaje("❌ No existe el array preguntasSentencias.", "bot");
+  if (typeof preguntasSentencias === "undefined" || !Array.isArray(preguntasSentencias)) {
+    mostrarMensaje("❌ No existe el array 'preguntasSentencias' o no es un array.", "bot");
     return;
   }
 
@@ -506,19 +512,11 @@ function iniciarTest() {
   preguntasParaEsteTest = [...preguntasSentencias];
   barajar(preguntasParaEsteTest);
 
-  resetBotones();
+  const { btnV, btnF } = getBotones();
 
-  const btnA = document.getElementById("btnA");
-  const btnB = document.getElementById("btnB");
-
-  btnA.style.display = "inline-block";
-  btnB.style.display = "inline-block";
-
-  btnA.textContent = "V";
-  btnB.textContent = "F";
-
-  btnA.onclick = () => responder("v");
-  btnB.onclick = () => responder("f");
+  // Botones V/F visibles y activos
+  setBoton(btnV, "✔️ V", () => responder("v"), true);
+  setBoton(btnF, "❌ F", () => responder("f"), true);
 
   mostrarPregunta();
 }
@@ -526,36 +524,27 @@ function iniciarTest() {
 // =======================
 // MOSTRAR PREGUNTA
 // =======================
-
 function mostrarPregunta() {
-  if (!preguntasParaEsteTest[i]) return;
-
   const p = preguntasParaEsteTest[i];
-  mostrarMensaje(
-    `${p.texto}\n\n${p.opciones.join("\n")}`,
-    "bot"
-  );
+  if (!p) return;
+
+  mostrarMensaje(`${p.texto}\n\n${p.opciones.join("\n")}`, "bot");
 }
 
 // =======================
-// RESPUESTA
+// RESPONDER
 // =======================
-
 function responder(opcion) {
   const p = preguntasParaEsteTest[i];
+  if (!p) return;
+
   mostrarMensaje(opcion.toUpperCase(), "user");
 
   if (opcion === p.correcta) {
     puntuacion++;
-    mostrarMensaje(
-      frases_animo[Math.floor(Math.random() * frases_animo.length)],
-      "bot"
-    );
+    mostrarMensaje(frases_animo[Math.floor(Math.random() * frases_animo.length)], "bot");
   } else {
-    mostrarMensaje(
-      `❌ Incorrecto. La correcta era ${p.correcta.toUpperCase()}`,
-      "bot"
-    );
+    mostrarMensaje(`❌ Incorrecto. La correcta era ${p.correcta.toUpperCase()}`, "bot");
   }
 
   i++;
@@ -564,11 +553,8 @@ function responder(opcion) {
     setTimeout(mostrarPregunta, 600);
   } else {
     setTimeout(() => {
-      mostrarMensaje(
-        `🏁 Resultado final: ${puntuacion} / ${preguntasParaEsteTest.length}`,
-        "bot"
-      );
-      setTimeout(mostrarMenuInicial, 1500);
+      mostrarMensaje(`🏁 Resultado final: ${puntuacion} / ${preguntasParaEsteTest.length}`, "bot");
+      setTimeout(mostrarMenuInicial, 1200);
     }, 600);
   }
 }
@@ -576,10 +562,7 @@ function responder(opcion) {
 // =======================
 // ARRANQUE
 // =======================
-
 document.addEventListener("DOMContentLoaded", mostrarMenuInicial);
-
-
 
 
 
